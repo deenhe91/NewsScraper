@@ -32,8 +32,13 @@ class NewspaperScraper():
 		else:
 			self.dic[d] = [(author, t, raw_text)]
 		return self.dic	
+	
+	def soupify(url):
+		r = requests.get(url)
+		soup = BeautifulSoup(r.text, 'lxml')
+		return soup
 
-	def store():
+	# def store():
 		#  store everything in cloud storage
 
 
@@ -110,19 +115,50 @@ class WorldCrunch(NewspaperScraper):
 
 
 class EurActiv(NewspaperScraper):
+	
 	base_url = 'http://www.euractiv.com'
 
-	def getlinks(self):
+	def getlinks(self, name):
+		split_name = '+'.join(name.split())
+		search_url = 'http://www.euractiv.com/?s={}'.format(split_name)
+		soup = BeautifulSoup(requests.get(search_url).text)
+		block = soup.find_all("div", {"class":"row"})[4]
+		
+		for b in block.find_all("a"):
+			if len(b['href'].split('/')) > 6 and b['href'] not in self.article_links:
+				self.article_links.append(b['href'])
+
+		return self.article_links
 
 	def parse(self):
+		if self.article_links = None:
+			raise Exception.message("No links! Run 'getlinks()' before 'parse()'")
+
+		for link in self.article links:
+			d, t, author, raw_text = newspaper(link)
+			self.dictify(self.dic, d, t, author, raw_text)
+
+		return self.dic
 
 
 class BBC(NewspaperScraper):
 	base_url = 'http://www.bbc.com/news'
 
-	def getlinks(self):
+	def getlinks(self, name):
+		split_name = '+'.join(name.split())
+		search_url = 'http://www.bbc.co.uk/search?q={}&sa_f=search-product&filter=news#page=10'.format(split_name)
+		
+		soup = soupify(search_url)
+
+		results = soup.find_all("ol", {"class":"search-results results"})
+		links = [[result['href'] for result in rs.find_all('a')] for rs in results]
+		self.article_links.extend(r_links)
+		
+		return self.article_links
 
 	def parse(self):
+		
+
 
 
 class ProjectSyndicate(NewspaperScraper):
