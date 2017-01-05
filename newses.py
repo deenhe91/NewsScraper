@@ -146,18 +146,25 @@ class BBC(NewspaperScraper):
 
 	def getlinks(self, name):
 		split_name = '+'.join(name.split())
-		search_url = 'http://www.bbc.co.uk/search?q={}&sa_f=search-product&filter=news#page=10'.format(split_name)
-		
-		soup = soupify(search_url)
+		for i in range(2,10):
+			search_url = 'http://www.bbc.co.uk/search?q={}&page={}'.format(split_name, i)
 
-		results = soup.find_all("ol", {"class":"search-results results"})
-		links = [[result['href'] for result in rs.find_all('a')] for rs in results]
-		self.article_links.extend(r_links)
+		r = requests.get(search_url)
+		soup = BeautifulSoup(r.text, 'lxml')
+
+		results = soup.find_all("section", {"id":"search-content"})
+		links = []
 		
-		return self.article_links
+		for r in results[0].find_all("li"):
+			if r.find("a")['href'] not in article_links:
+				links.append(r.find("a")['href'])
+
+		self.article_links.extend(links)
+		
+		return self.article_links  
 
 	def parse(self):
-		
+
 
 
 
