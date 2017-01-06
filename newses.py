@@ -1,11 +1,15 @@
-import subprocess
+from google.cloud import language
+
 
 class NewspaperScraper():
+
+	language_client = language.Client()
 
 	def __init__(self):
 		self.dic = {}  # creates a new empty dic for each instance
 		self.article_links = []  # creates a new empty list for each instance
-
+		self.sentiment_data = {}
+		self.entity_data = {}
 
 	def newspaper(self, url, authors='authors'):
 		article = Article(url)   
@@ -25,21 +29,35 @@ class NewspaperScraper():
 	except:
 	return 'none', 'none', 'none', 'none'
 
+	def googlify(text):
+		document = language_client.document_from_text(text)
+		
+		sentiment = document.analyze_sentiment()
+		self.sentiment_data = {'score':sentiment.score, 'magnitude':sentiment.magnitude}
+	
+		entities = document.analyze_entities()
+		for entity in entities:
+			self.entity_data[entity.name] = {'type':entity.type, 
+										'salience':entity.salience, 
+										'wiki':entity.wikipedia_url}
+		return self.sentiment_data, self.entity_data
+	
 
 	def dictify(self, d, t, author, raw_text):
 		if d in self.dic:
-			self.dic[d].extend([(author, t, raw_text)])
+			self.dic[d].append([{'time':t,
+									'author':author,
+									'raw_text':raw_text, 
+									'sentiment':self.sentiment_data
+									'entities':self.entity_data}])
 		else:
-			self.dic[d] = [(author, t, raw_text)]
+			self.dic[d] = [{'time':t,
+							'author':author,
+							'raw_text':raw_text, 
+							'sentiment':self.sentiment_data
+							'entities':self.entity_data}]
 		return self.dic	
-	
-	def soupify(url):
-		r = requests.get(url)
-		soup = BeautifulSoup(r.text, 'lxml')
-		return soup
 
-	# def store():
-		#  store everything in cloud storage
 
 
 
@@ -58,7 +76,7 @@ class Guardian(NewspaperScraper):
 		date = '2001-01-01'
 		apiUrl = 'http://content.guardianapis.com/search?from-date={}&page-size=161&q={}&api-key={}'.format(date, split_name, apiKey)
 
-		result_dic = requests.get(apiUrl).text[]
+		result_dic = requests.get(apiUrl).text
 		
 		for result in json.loads(result_dic.text)['response']['results']:
 

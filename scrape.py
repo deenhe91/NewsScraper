@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# !/usr/bin/env python
 
 # imports
 import requests
@@ -9,10 +9,12 @@ from newspaper import Article
 from datetime import datetime
 from newses import Guardian, BBC, WorldCrunch, EurActiv
 from google.cloud import storage
+from google.cloud import language
+
 
 members = ['mario draghi', 'vitor constancio', 'benoit coeure', 'yves mersche', 'sabine lautenschlager', 'peter praet']
 
-# gather linKS
+# gather linkS
 
 # PARSE
 guardian = Gaurdian()
@@ -29,14 +31,19 @@ for member in members:
 	for site in sites:
 		site.getlinks(member)
 		member_data = site.parse()
+		# include NLP analysis?
 		site_data = {site:member_data}
 		master_data[site] = site_data
 
 print('scrape complete. storing data.')
 
+# 
+
+
+
 # STORE
 
-bucket_name = ''
+bucket_name = 'dove-hawk-data'
 
 def upload_blob(bucket_name, source_file_name, destination_blob_name):
     """Uploads a file to the bucket."""
