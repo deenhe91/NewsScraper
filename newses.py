@@ -2,7 +2,7 @@ import re
 import json
 import datetime
 import requests
-import bs4 as BeautifulSoup
+from bs4 import BeautifulSoup
 from newspaper import Article
 from google.cloud import language
 
@@ -43,23 +43,23 @@ class NewspaperScraper:
 	
 		entities = document.analyze_entities()
 		for entity in entities:
-			self.entity_data[entity.name] = {'type':entity.type, 
+			self.entity_data[entity.name] = {'type':entity.entity_type, 
 										'salience':entity.salience, 
 										'wiki':entity.wikipedia_url}
 		return self.sentiment_data, self.entity_data
 	
 
-	def dictify(self, d, t, author, raw_text):
+	def dictify(self, d, t, author):
 		if d in self.dic:
 			self.dic[d].append([{'time':t,
 									'author':author,
-									'raw_text':raw_text, 
+									'raw_text':self.raw_text, 
 									'sentiment':self.sentiment_data,
 									'entities':self.entity_data}])
 		else:
 			self.dic[d] = [{'time':t,
 							'author':author,
-							'raw_text':raw_text, 
+							'raw_text':self.raw_text, 
 							'sentiment':self.sentiment_data,
 							'entities':self.entity_data}]
 		return self.dic	
@@ -69,13 +69,11 @@ class NewspaperScraper:
 
 class Guardian(NewspaperScraper):
 	
-	def __init__(self):
-		NewspaperScraper.__init__(self)
-	
 	base_url = 'http://www.theguardian.com' # same for every instance
 
 	def __init__(self):
-		self.article_links = []  # creates a new empty  for each instance
+		NewspaperScraper.__init__(self)
+
 
 
 	def getlinks(self, name):
@@ -104,9 +102,9 @@ class Guardian(NewspaperScraper):
 			raise Exception.message('No links! Run getlinks() before parse()')
 
 		for link in self.article_links:
-			d, t, author, raw_text = self.newspaper(link)
+			d, t, author, self.raw_text = self.newspaper(link)
 			self.googlify()
-			self.dictify(self.dic, d, t, author, raw_text)
+			self.dictify(d, t, author)
 
 		return self.dic
 
@@ -140,9 +138,9 @@ class WorldCrunch(NewspaperScraper):
 			raise Exception.message('No links! Run getlinks() before parse()')
 
 		for link in self.article_links:
-			d, t, author, raw_text = self.newspaper(link)
+			d, t, author, self.raw_text = self.newspaper(link)
 			self.googlify()
-			self.dictify(self.dic, d, t, author, raw_text)
+			self.dictify(d, t, author)
 
 		return self.dic
 
@@ -170,9 +168,9 @@ class EurActiv(NewspaperScraper):
 			raise Exception.message("No links! Run 'getlinks()' before 'parse()'")
 
 		for link in self.article_links:
-			d, t, author, raw_text = self.newspaper(link)
+			d, t, author, self.raw_text = self.newspaper(link)
 			self.googlify()
-			self.dictify(self.dic, d, t, author, raw_text)
+			self.dictify(d, t, author)
 
 		return self.dic
 
@@ -188,17 +186,17 @@ class BBC(NewspaperScraper):
 		for i in range(2,10):
 			search_url = 'http://www.bbc.co.uk/search?q={}&page={}'.format(split_name, i)
 
-		r = requests.get(search_url)
-		soup = BeautifulSoup(r.text, 'lxml')
+			r = requests.get(search_url)
+			soup = BeautifulSoup(r.text, 'lxml')
 
-		results = soup.find_all("section", {"id":"search-content"})
-		links = []
+			results = soup.find_all("section", {"id":"search-content"})
+			links = []
 		
-		for r in results[0].find_all("li"):
-			if r.find("a")['href'] not in article_links:
-				links.append(r.find("a")['href'])
+			for r in results[0].find_all("li"):
+				if r.find("a")['href'] not in self.article_links:
+					links.append(r.find("a")['href'])
 
-		self.article_links.extend(links)
+			self.article_links.extend(links)
 		
 		return self.article_links  
 
@@ -218,7 +216,7 @@ class BBC(NewspaperScraper):
 			t = datetime.strftime(date, '%H:%S')
 			# d, t, author, raw_text = newspaper(link)
 			self.googlify()
-			self.dictify(self.dic, d, t, author, raw_text)
+			self.dictify(d, t, author)
 
 
 
