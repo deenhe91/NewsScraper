@@ -78,8 +78,9 @@ class Guardian(NewspaperScraper):
 
 		result_dic = requests.get(apiUrl).text
 		
+		#  result is a string > jsonify:
 		for result in json.loads(result_dic.text)['response']['results']:
-
+			# only grab articles (not videos, photo lists, etc.)
 			if result['type'] == 'article' and result['section'] != 'sport':
 				url = result['webUrl']
 				self.article_links.append(url)
@@ -182,13 +183,3 @@ class BBC(NewspaperScraper):
 		return self.article_links  
 
 	def parse(self):
-
-
-
-
-# class ProjectSyndicate(NewspaperScraper):
-# 	base_url = ''
-
-# 	def getlinks(self):
-
-# 	def parse(self):

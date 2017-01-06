@@ -14,9 +14,8 @@ from google.cloud import language
 
 members = ['mario draghi', 'vitor constancio', 'benoit coeure', 'yves mersche', 'sabine lautenschlager', 'peter praet']
 
-# gather linkS
 
-# PARSE
+# COLLECT, PARSE
 guardian = Gaurdian()
 bbc = BBC()
 wc = WorldCrunch()
@@ -26,24 +25,27 @@ sites = [guardian, bbc, wc, euractiv]
 
 master_data = {}
 
+# nested sites within members to avoid overscraping a site
 for member in members:
 	print('Find articles for {}...'.format(member))
 	for site in sites:
 		site.getlinks(member)
 		member_data = site.parse()
-		# include NLP analysis?
-		site_data = {site:member_data}
-		master_data[site] = site_data
+		# this will overwrite. therefore, doesn't add to dic, only creates for storage
+		# store in cloud under 'date of scrape'?
+		master_data[site][member] = member_data
+
+with open('../data/master_data.json', 'w') as fp:
+    json.dump(master_data, fp)
 
 print('scrape complete. storing data.')
-
-# 
-
-
 
 # STORE
 
 bucket_name = 'dove-hawk-data'
+source_file_name = '../data/master_data.json'
+now = datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M')
+destination_blob_name = '{}-master_data'.format(now)
 
 def upload_blob(bucket_name, source_file_name, destination_blob_name):
     """Uploads a file to the bucket."""
