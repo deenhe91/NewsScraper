@@ -1,15 +1,19 @@
+import re
+import json
+import datetime
+import requests
+import bs4 as BeautifulSoup
+from newspaper import Article
 from google.cloud import language
 
-
-class NewspaperScraper():
-
-	language_client = language.Client()
+class NewspaperScraper:
 
 	def __init__(self):
 		self.dic = {}  # creates a new empty dic for each instance
 		self.article_links = []  # creates a new empty list for each instance
 		self.sentiment_data = {}
 		self.entity_data = {}
+		self.raw_text = ''
 
 	def newspaper(self, url, authors='authors'):
 		article = Article(url)   
@@ -20,17 +24,19 @@ class NewspaperScraper():
 			r_datetime = article.publish_date
 			d = datetime.strftime(r_datetime, '%Y-%m-%d')
 			t = datetime.strftime(r_datetime, '%H:%M:%S')
-			raw_text = article.text
+			self.raw_text = article.text
 			if authors =='authors':
 			    author = article.authors[0]
 			else:
 			    author = 'none'
-		return d, t, raw_text, author
-	except:
-	return 'none', 'none', 'none', 'none'
+			
+			return d, t, self.raw_text, author
+		except:
+			return 'none', 'none', 'none', 'none'
 
-	def googlify(text):
-		document = language_client.document_from_text(text)
+	def googlify(self):
+		language_client = language.Client()
+		document = language_client.document_from_text(self.raw_text)
 		
 		sentiment = document.analyze_sentiment()
 		self.sentiment_data = {'score':sentiment.score, 'magnitude':sentiment.magnitude}
@@ -48,13 +54,13 @@ class NewspaperScraper():
 			self.dic[d].append([{'time':t,
 									'author':author,
 									'raw_text':raw_text, 
-									'sentiment':self.sentiment_data
+									'sentiment':self.sentiment_data,
 									'entities':self.entity_data}])
 		else:
 			self.dic[d] = [{'time':t,
 							'author':author,
 							'raw_text':raw_text, 
-							'sentiment':self.sentiment_data
+							'sentiment':self.sentiment_data,
 							'entities':self.entity_data}]
 		return self.dic	
 
@@ -63,14 +69,18 @@ class NewspaperScraper():
 
 class Guardian(NewspaperScraper):
 	
+	def __init__(self):
+		NewspaperScraper.__init__(self)
+	
 	base_url = 'http://www.theguardian.com' # same for every instance
-	apiKey = '458f61b9-2ff0-4a3f-98a1-feff65660ca6'
 
 	def __init__(self):
 		self.article_links = []  # creates a new empty  for each instance
 
 
 	def getlinks(self, name):
+		apiKey = '458f61b9-2ff0-4a3f-98a1-feff65660ca6'
+
 		#  uses the api unlike others
 		split_name = '%20'.join(name.split())
 		date = '2001-01-01'
@@ -79,9 +89,9 @@ class Guardian(NewspaperScraper):
 		result_dic = requests.get(apiUrl).text
 		
 		#  result is a string > jsonify:
-		for result in json.loads(result_dic.text)['response']['results']:
+		for result in json.loads(result_dic)['response']['results']:
 			# only grab articles (not videos, photo lists, etc.)
-			if result['type'] == 'article' and result['section'] != 'sport':
+			if result['type'] == 'article' and result['sectionId'] != 'sport':
 				url = result['webUrl']
 				self.article_links.append(url)
 
@@ -90,11 +100,12 @@ class Guardian(NewspaperScraper):
 
 	def parse(self):
 		
-		if self.article_links = None:
+		if self.article_links == None:
 			raise Exception.message('No links! Run getlinks() before parse()')
 
-		for link in self.article links:
-			d, t, author, raw_text = newspaper(link)
+		for link in self.article_links:
+			d, t, author, raw_text = self.newspaper(link)
+			self.googlify()
 			self.dictify(self.dic, d, t, author, raw_text)
 
 		return self.dic
@@ -103,6 +114,8 @@ class Guardian(NewspaperScraper):
 
 
 class WorldCrunch(NewspaperScraper):
+	def __init__(self):
+		NewspaperScraper.__init__(self)
 
 	base_url = 'http://www.worldcrunch.com/' # same for every instance
 
@@ -123,18 +136,21 @@ class WorldCrunch(NewspaperScraper):
 
 	
 	def parse(self):
-		if self.article_links = None:
+		if self.article_links == None:
 			raise Exception.message('No links! Run getlinks() before parse()')
 
-		for link in self.article links:
-			d, t, author, raw_text = newspaper(link)
+		for link in self.article_links:
+			d, t, author, raw_text = self.newspaper(link)
+			self.googlify()
 			self.dictify(self.dic, d, t, author, raw_text)
 
 		return self.dic
 
 
 class EurActiv(NewspaperScraper):
-	
+	def __init__(self):
+		NewspaperScraper.__init__(self)
+
 	base_url = 'http://www.euractiv.com'
 
 	def getlinks(self, name):
@@ -150,17 +166,21 @@ class EurActiv(NewspaperScraper):
 		return self.article_links
 
 	def parse(self):
-		if self.article_links = None:
+		if self.article_links == None:
 			raise Exception.message("No links! Run 'getlinks()' before 'parse()'")
 
-		for link in self.article links:
-			d, t, author, raw_text = newspaper(link)
+		for link in self.article_links:
+			d, t, author, raw_text = self.newspaper(link)
+			self.googlify()
 			self.dictify(self.dic, d, t, author, raw_text)
 
 		return self.dic
 
 
 class BBC(NewspaperScraper):
+	def __init__(self):
+		NewspaperScraper.__init__(self)
+
 	base_url = 'http://www.bbc.com/news'
 
 	def getlinks(self, name):
@@ -183,3 +203,27 @@ class BBC(NewspaperScraper):
 		return self.article_links  
 
 	def parse(self):
+		if self.article_links == None:
+			raise Exception.message("No links! Run 'getlinks()' before 'parse()'")
+
+		for link in self.article_links:
+			article = Article(link)
+			article.download()
+			article.parse()
+			self.raw_text = article.text
+
+			author = 'BBC News'
+			date = datetime.strptime(soup.find("div", {"class":"date date--v2"})['data-datetime'], '%d %B %Y')
+			d = datetime.strftime(date, '%Y-%m-%d')
+			t = datetime.strftime(date, '%H:%S')
+			# d, t, author, raw_text = newspaper(link)
+			self.googlify()
+			self.dictify(self.dic, d, t, author, raw_text)
+
+
+
+
+
+
+
+
