@@ -168,9 +168,9 @@ class BBC(NewspaperScraper):
 
 
 
-class ProjectSyndicate(NewspaperScraper):
-	base_url = ''
+# class ProjectSyndicate(NewspaperScraper):
+# 	base_url = ''
 
-	def getlinks(self):
+# 	def getlinks(self):
 
-	def parse(self):
+# 	def parse(self):
