@@ -213,7 +213,7 @@ class BBC(NewspaperScraper):
 
 		for link in self.article_links:
 
-			if 'programmes' not in link:
+			if 'programmes' not in link and 'uk/news/live/' not in link:
 				print(link)
 				article = Article(link)
 				article.download()

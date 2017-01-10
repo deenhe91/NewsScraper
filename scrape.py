@@ -13,7 +13,7 @@ from google.cloud import language
 
 print('Imports successful. \n\n')
 
-members = ['mario draghi', 'vitor constancio']
+members = ['mario draghi']
 # , 'benoit coeure', 'yves mersche', 'sabine lautenschlager', 'peter praet'
 
 print('MEMBERS OF ECB BOARD:')
@@ -26,8 +26,8 @@ bbc = BBC()
 wc = WorldCrunch()
 euractiv = EurActiv()
 
-sites = [guardian, bbc, wc, euractiv]
-site_names = ['guardian', 'bbc', 'euractiv']
+sites = [bbc]
+site_names = ['bbc'] #'guardian', 'wc'
 master_data = {}
 
 # nested sites within members to avoid overscraping a site
