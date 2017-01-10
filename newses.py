@@ -105,6 +105,8 @@ class Guardian(NewspaperScraper):
 			d, t, author, self.raw_text = self.newspaper(link)
 			self.googlify()
 			self.dictify(d, t, author)
+			with open('data/guardian_data.json', 'w') as fp:
+				json.dump(self.dic, fp)
 
 		return self.dic
 
@@ -141,6 +143,8 @@ class WorldCrunch(NewspaperScraper):
 			d, t, author, self.raw_text = self.newspaper(link)
 			self.googlify()
 			self.dictify(d, t, author)
+			with open('data/wc_data.json', 'w') as fp:
+				json.dump(self.dic, fp)
 
 		return self.dic
 
@@ -171,6 +175,8 @@ class EurActiv(NewspaperScraper):
 			d, t, author, self.raw_text = self.newspaper(link)
 			self.googlify()
 			self.dictify(d, t, author)
+			with open('data/euractiv_data.json', 'w') as fp:
+				json.dump(self.dic, fp)
 
 		return self.dic
 
@@ -183,7 +189,7 @@ class BBC(NewspaperScraper):
 
 	def getlinks(self, name):
 		split_name = '+'.join(name.split())
-		for i in range(2,10):
+		for i in range(2,5):
 			search_url = 'http://www.bbc.co.uk/search?q={}&page={}'.format(split_name, i)
 
 			r = requests.get(search_url)
@@ -197,6 +203,7 @@ class BBC(NewspaperScraper):
 					links.append(r.find("a")['href'])
 
 			self.article_links.extend(links)
+
 		
 		return self.article_links  
 
@@ -205,18 +212,26 @@ class BBC(NewspaperScraper):
 			raise Exception.message("No links! Run 'getlinks()' before 'parse()'")
 
 		for link in self.article_links:
-			article = Article(link)
-			article.download()
-			article.parse()
-			self.raw_text = article.text
+			try:
+				article = Article(link)
+				article.download()
+				article.parse()
+				self.raw_text = article.text
 
-			author = 'BBC News'
-			date = datetime.strptime(soup.find("div", {"class":"date date--v2"})['data-datetime'], '%d %B %Y')
-			d = datetime.strftime(date, '%Y-%m-%d')
-			t = datetime.strftime(date, '%H:%S')
-			# d, t, author, raw_text = newspaper(link)
-			self.googlify()
-			self.dictify(d, t, author)
+				author = 'BBC News'
+				r = requests.get(link).text
+				soup = BeautifulSoup(r, 'lxml')
+				
+				date = datetime.datetime.strptime(soup.find("div", {"class":"date date--v2"})['data-datetime'], '%d %B %Y')
+				d = datetime.strftime(date, '%Y-%m-%d')
+				t = datetime.strftime(date, '%H:%S')
+				# d, t, author, raw_text = newspaper(link)
+				self.googlify()
+				self.dictify(d, t, author)
+				with open('data/bbc_data.json', 'w') as fp:
+					json.dump(self.dic, fp)
+			except:
+				pass
 
 
 

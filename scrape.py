@@ -31,7 +31,7 @@ site_names = ['guardian', 'bbc', 'wc', 'euractiv']
 master_data = {}
 
 # nested sites within members to avoid overscraping a site
-print('Starting scrape...\n\n\n')
+print('Starting scrape...\n\n\n') 
 
 for member in members:
 	print('Find articles for {}...'.format(member))
