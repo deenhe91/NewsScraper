@@ -17,22 +17,21 @@ class NewspaperScraper:
 
 	def newspaper(self, url, authors='authors'):
 		article = Article(url)   
-
-		try:
-			article.download()
-			article.parse()
-			r_datetime = article.publish_date
-			d = datetime.strftime(r_datetime, '%Y-%m-%d')
-			t = datetime.strftime(r_datetime, '%H:%M:%S')
-			self.raw_text = article.text
-			if authors =='authors':
-			    author = article.authors[0]
-			else:
-			    author = 'none'
-			
-			return d, t, self.raw_text, author
-		except:
-			return 'none', 'none', 'none', 'none'
+		article.download()
+		article.parse()
+		r_datetime = article.publish_date
+		d = datetime.datetime.strftime(r_datetime, '%Y-%m-%d')
+		t = datetime.datetime.strftime(r_datetime, '%H:%M:%S')
+		self.raw_text = article.text
+		
+		if len(article.authors):
+			author = article.authors[0]
+		else:
+			author = 'none'
+		
+		return d, t, self.raw_text, author
+		# except:
+		# 	return 'none', 'none', 'none', 'none'
 
 	def googlify(self):
 		language_client = language.Client()
@@ -102,12 +101,13 @@ class Guardian(NewspaperScraper):
 			raise Exception.message('No links! Run getlinks() before parse()')
 
 		for link in self.article_links:
+			# print(link)
 			d, t, author, self.raw_text = self.newspaper(link)
 			self.googlify()
 			self.dictify(d, t, author)
-			with open('data/guardian_data.json', 'w') as fp:
-				json.dump(self.dic, fp)
-
+			# print('\nlink complete\n')
+		with open('data/guardian_data.json', 'w') as fp:
+			json.dump(self.dic, fp)
 		return self.dic
 
 
@@ -143,8 +143,8 @@ class WorldCrunch(NewspaperScraper):
 			d, t, author, self.raw_text = self.newspaper(link)
 			self.googlify()
 			self.dictify(d, t, author)
-			with open('data/wc_data.json', 'w') as fp:
-				json.dump(self.dic, fp)
+		with open('data/wc_data.json', 'w') as fp:
+			json.dump(self.dic, fp)
 
 		return self.dic
 
@@ -175,8 +175,8 @@ class EurActiv(NewspaperScraper):
 			d, t, author, self.raw_text = self.newspaper(link)
 			self.googlify()
 			self.dictify(d, t, author)
-			with open('data/euractiv_data.json', 'w') as fp:
-				json.dump(self.dic, fp)
+		with open('data/euractiv_data.json', 'w') as fp:
+			json.dump(self.dic, fp)
 
 		return self.dic
 
@@ -212,7 +212,9 @@ class BBC(NewspaperScraper):
 			raise Exception.message("No links! Run 'getlinks()' before 'parse()'")
 
 		for link in self.article_links:
-			try:
+
+			if 'programmes' not in link:
+				print(link)
 				article = Article(link)
 				article.download()
 				article.parse()
@@ -221,17 +223,16 @@ class BBC(NewspaperScraper):
 				author = 'BBC News'
 				r = requests.get(link).text
 				soup = BeautifulSoup(r, 'lxml')
-				
 				date = datetime.datetime.strptime(soup.find("div", {"class":"date date--v2"})['data-datetime'], '%d %B %Y')
-				d = datetime.strftime(date, '%Y-%m-%d')
-				t = datetime.strftime(date, '%H:%S')
-				# d, t, author, raw_text = newspaper(link)
+				d = datetime.datetime.strftime(date, '%Y-%m-%d')
+				t = datetime.datetime.strftime(date, '%H:%S')
+			# d, t, author, raw_text = newspaper(link)
 				self.googlify()
 				self.dictify(d, t, author)
-				with open('data/bbc_data.json', 'w') as fp:
-					json.dump(self.dic, fp)
-			except:
-				pass
+				print('link complete')
+
+		with open('data/bbc_data.json', 'w') as fp:
+				json.dump(self.dic, fp)
 
 
 

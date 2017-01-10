@@ -27,7 +27,7 @@ wc = WorldCrunch()
 euractiv = EurActiv()
 
 sites = [guardian, bbc, wc, euractiv]
-site_names = ['guardian', 'bbc', 'wc', 'euractiv']
+site_names = ['guardian', 'bbc', 'euractiv']
 master_data = {}
 
 # nested sites within members to avoid overscraping a site
