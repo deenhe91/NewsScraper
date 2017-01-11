@@ -63,6 +63,9 @@ class NewspaperScraper:
 							'entities':self.entity_data}]
 		return self.dic	
 
+	def getData(self, name):
+		links = self.getLinks(name)
+		return self.parse()
 
 
 

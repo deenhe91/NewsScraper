@@ -11,6 +11,9 @@ from newses import Guardian, BBC, WorldCrunch, EurActiv
 from google.cloud import storage
 from google.cloud import language
 
+from multiprocessing.dummy import Pool as ThreadPool 
+
+
 print('Imports successful. \n\n')
 
 members = ['mario draghi']
@@ -26,6 +29,14 @@ bbc = BBC()
 wc = WorldCrunch()
 euractiv = EurActiv()
 
+# Joe: Maybe not idiomatic python, but in javascript another way to do this would be to
+# site = {
+#   bbc: bbc,
+#   guardian: guardian,
+#   ...
+# }
+# and then make a list from the keys if you need to
+
 sites = [bbc]
 site_names = ['bbc'] #'guardian', 'wc'
 master_data = {}
@@ -33,18 +44,35 @@ master_data = {}
 # nested sites within members to avoid overscraping a site
 print('Starting scrape...\n\n\n') 
 
+def getMemberData(member):
+  # create a helper function to wrap the site and data to make the mapping easier
+  def getSiteData(site):
+    return site.getData(member)
+
+  # for each site start a new thread
+  print('Find articles for {}...'.format(member))
+
+  # start thread pool and begin processing
+  pool = ThreadPool(4) 
+  results = pool.map(sites, getSiteData)
+
+  pool.close() 
+  # block until all the results have returned
+  pool.join() 
+
+  # results should contains the member data for each site
+  return results
+
+
 for member in members:
-	print('Find articles for {}...'.format(member))
-	for i in range(len(sites)):
-		print('site: {}'.format(site_names[i]))
-		sites[i].getlinks(member)
-		member_data = sites[i].parse()
-		# this will overwrite. therefore, doesn't add to dic, only creates for storage
-		# store in cloud under 'date of scrape'?
-		if site_names[i] in master_data:
-			master_data[site_names[i]][member] = member_data
-		else:
-			master_data[site_names[i]] = {member:member_data}
+  data = getMemberData(member)
+  # Joe: this needs to be changed
+  # this will overwrite. therefore, doesn't add to dic, only creates for storage
+  # store in cloud under 'date of scrape'?
+  # if site_names[i] in master_data:
+  #   master_data[site_names[i]][member] = member_data
+  # else:
+  #   master_data[site_names[i]] = {member:member_data}
 
 
 with open('../data/master_data.json', 'w') as fp:
